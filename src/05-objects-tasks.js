@@ -20,8 +20,13 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  this.width = width;
+  this.height = height;
+
+  this.getArea = function multiply() {
+    return this.width * this.height;
+  };
 }
 
 
@@ -35,8 +40,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,8 +56,10 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const parsedJSON = JSON.parse(json);
+
+  return Object.assign(Object.create(proto), parsedJSON);
 }
 
 
@@ -109,34 +116,125 @@ function fromJSON(/* proto, json */) {
  *
  *  For more examples see unit tests.
  */
+class Builder {
+  constructor() {
+    this.elementDOM = '';
+    this.idDOM = '';
+    this.classDOM = [];
+    this.attrDOM = [];
+    this.pseudoClassDOM = [];
+    this.pseudoElementDOM = '';
+    this.combineSelectors = '';
+    this.error1 = 'Element, id and pseudo-element should not occur more then one time inside the selector';
+    this.error2 = 'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element';
+  }
+
+  element(value) {
+    if (this.elementDOM) throw new Error(this.error1);
+    if (
+      this.idDOM
+      || this.classDOM.length
+      || this.attrDOM.length
+      || this.pseudoClassDOM.length
+      || this.pseudoElementDOM
+    ) throw new Error(this.error2);
+    this.elementDOM = value;
+
+    return this;
+  }
+
+  id(value) {
+    if (this.idDOM) throw new Error(this.error1);
+    if (
+      this.classDOM.length
+      || this.attrDOM.length
+      || this.pseudoClassDOM.length
+      || this.pseudoElementDOM
+    ) throw new Error(this.error2);
+    this.idDOM = value;
+
+    return this;
+  }
+
+  class(value) {
+    if (
+      this.attrDOM.length
+      || this.pseudoClassDOM.length
+      || this.pseudoElementDOM
+    ) throw new Error(this.error2);
+    this.classDOM.push(value);
+
+    return this;
+  }
+
+  attr(value) {
+    if (this.pseudoClassDOM.length || this.pseudoElementDOM) throw new Error(this.error2);
+    this.attrDOM.push(value);
+
+    return this;
+  }
+
+  pseudoClass(value) {
+    if (this.pseudoElementDOM) throw new Error(this.error2);
+    this.pseudoClassDOM.push(value);
+
+    return this;
+  }
+
+  pseudoElement(value) {
+    if (this.pseudoElementDOM) throw new Error(this.error1);
+    this.pseudoElementDOM = value;
+
+    return this;
+  }
+
+  combine(selector1, combinator, selector2) {
+    this.combineSelectors = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+
+    return this;
+  }
+
+  stringify() {
+    let res = '';
+    if (this.combineSelectors) return this.combineSelectors;
+    if (this.elementDOM) res += this.elementDOM;
+    if (this.idDOM) res += `#${this.idDOM}`;
+    if (this.classDOM.length) res += [...this.classDOM].map((el) => `.${el}`).join('');
+    if (this.attrDOM.length) res += `[${[...this.attrDOM]}]`.split(',').join('][');
+    if (this.pseudoClassDOM) res += [...this.pseudoClassDOM].map((el) => `:${el}`).join('');
+    if (this.pseudoElementDOM) res += `::${this.pseudoElementDOM}`;
+
+    return res;
+  }
+}
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new Builder().element(value);
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new Builder().id(value);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new Builder().class(value);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new Builder().attr(value);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new Builder().pseudoClass(value);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new Builder().pseudoElement(value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    return new Builder().combine(selector1, combinator, selector2);
   },
 };
 
